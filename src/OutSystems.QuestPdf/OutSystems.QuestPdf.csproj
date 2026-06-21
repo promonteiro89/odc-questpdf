@@ -1,0 +1,69 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- ODC external-logic runtime is documented/published against .NET 8 (LTS).
+         The official templates also list net10.0; if your ODC tenant exposes the
+         .NET 10 runtime you can add it to <TargetFrameworks> and produce a second
+         zip. net8.0 is the safe primary target. -->
+    <TargetFramework>net8.0</TargetFramework>
+
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+
+    <RootNamespace>OutSystems.QuestPdf</RootNamespace>
+    <AssemblyName>OutSystems.QuestPdf</AssemblyName>
+
+    <!-- ODC external logic runs on linux-x64. Declaring the RID makes NuGet
+         restore the RID-specific native assets up front, so that
+         `dotnet publish -r linux-x64` reliably emits the QuestPDF native engine
+         (libQuestPdfSkia.so + libqpdf.so) into the publish output. -->
+    <RuntimeIdentifiers>linux-x64</RuntimeIdentifiers>
+
+    <!-- Keep the upload package lean. -->
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+
+    <!-- CustomCode.Analyzer is built against a newer Roslyn than the .NET 8.0.4xx
+         SDK ships; it still runs. CS9057 is the benign "newer compiler referenced"
+         notice. Building with a .NET 9/10 SDK clears it entirely. -->
+    <NoWarn>$(NoWarn);CS9057</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The ODC External Libraries SDK: provides [OSInterface], [OSAction],
+         [OSParameter], [OSStructure], [OSStructureField], [OSIgnore]. No deps. -->
+    <PackageReference Include="OutSystems.ExternalLibraries.SDK" Version="1.5.0" />
+
+    <!-- Official ODC observability: the ODC runtime injects an ILogger into the
+         [OSInterface] implementation's constructor (Custom Code Logging & Tracing,
+         Nov 2025). This is the abstractions-only package; it is null-safe and
+         no-ops locally / in tests. -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+
+    <!-- The PDF engine. IMPORTANT: for net8.0 this package has NO managed
+         dependencies — it bundles its own native engine (QuestPdfSkia) under
+         runtimes/<rid>/native. Do NOT add SkiaSharp.NativeAssets.* packages:
+         modern QuestPDF does not use the SkiaSharp NuGet, and adding them only
+         bloats the zip. (Only legacy QuestPDF <= ~2024.2 referenced SkiaSharp.)
+         Verify on nuget.org that your pinned version lists "No dependencies"
+         for net8.0 before shipping. -->
+    <PackageReference Include="QuestPDF" Version="2026.6.0" />
+
+    <!-- Dev-time Roslyn analyzer that validates ODC SDK usage at build time.
+         PrivateAssets=all keeps it out of the shipped package. -->
+    <PackageReference Include="CustomCode.Analyzer" Version="0.2.1" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Drop .ttf/.otf files in Resources/Fonts to embed and auto-register them
+         (see FontBootstrapper). If none are present, QuestPDF's bundled Lato
+         font is used, so the library still renders on a fontless container.
+         Icons in Resources/Icons can be referenced from [OSInterface]/[OSAction]
+         IconResourceName attributes. Globs that match nothing are harmless. -->
+    <EmbeddedResource Include="Resources/Fonts/*.ttf" />
+    <EmbeddedResource Include="Resources/Fonts/*.otf" />
+    <EmbeddedResource Include="Resources/Icons/*.png" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Local smoke test. Run on your dev machine to validate that QuestPDF renders
+       before packaging for ODC, via: dotnet run (in samples/Smoke).
+       It writes out.pdf next to the executable. This exercises the same rendering
+       path the ODC actions use. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\OutSystems.QuestPdf\OutSystems.QuestPdf.csproj" />
+  </ItemGroup>
+
+</Project>
